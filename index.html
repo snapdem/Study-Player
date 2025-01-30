@@ -5,68 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snapdemon's Uninterrupted Video Player</title>
     <style>
+        /* Base styles */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
             background-color: #f0f4ff;
             color: #333;
             margin: 0;
             padding: 0;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            overflow: hidden;
             position: relative;
         }
 
         .content-container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             position: absolute;
-            transition: all 1s ease;
+            transition: all 0.3s ease;
+            margin-top: 160px;
         }
 
-        h1, h2 {
-            transition: all 0.8s ease;
-            text-align: center;
-            margin: 0;
+        .content-container.move {
+            transform: translateX(-200%);
+            opacity: 0;
+        }
+
+        .content-container.hidden {
+            display: none;
         }
 
         h1 {
             color: #5c3fc0;
             font-size: 36px;
-            margin-bottom: 5px;
+            margin-bottom: 15px;
+            text-align: center;
         }
 
         h2 {
             color: #3f2d99;
             font-size: 18px;
             margin-bottom: 20px;
-        }
-
-        .content-container.move {
-            top: 20px;
-            right: 20px;
-            transform: translateX(0);
-            opacity: 0;
+            text-align: center;
         }
 
         select, button {
-            padding: 10px;
+            width: 100%;
+            max-width: 300px;
+            padding: 12px;
             border: 2px solid #5c3fc0;
-            border-radius: 5px;
+            border-radius: 8px;
             font-size: 16px;
-            margin-top: 20px;
+            margin: 10px 0;
             cursor: pointer;
-            display: block;
         }
 
         button {
             background-color: #5c3fc0;
             color: white;
             border: none;
-            margin-top: 10px;
+            font-weight: 600;
         }
 
         button:hover {
@@ -74,469 +77,388 @@
         }
 
         .video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: #f0f4ff;
             display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80%;
-            max-width: 800px;
-            text-align: center;
+            z-index: 1000;
+        }
+
+        .video-container.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .video-wrapper {
+            width: 90%;
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+            margin: 20px auto;
         }
 
         iframe {
             width: 100%;
-            height: 450px;
+            height: 100%;
             border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
 
         .error-message {
-            color: red;
-            font-size: 18px;
-            margin-top: 10px;
-        }
-
-        .dots-container {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            cursor: pointer;
-            font-size: 30px;
-            background-color: #5c3fc0;
-            color: white;
+            color: #dc3545;
+            font-size: 16px;
+            margin: 10px 0;
             padding: 10px;
-            border-radius: 50%;
-        }
-
-        .dots-container:hover {
-            background-color: #3f2d99;
-        }
-
-        .dots-container span {
-            font-size: 12px;
-        }
-
-        .content-container.hidden {
-            display: none;
+            background: rgba(220, 53, 69, 0.1);
+            border-radius: 6px;
+            text-align: center;
         }
 
         .go-home-button {
-            display: none;
             position: fixed;
             top: 20px;
             left: 20px;
-            padding: 10px 20px;
+            padding: 12px 24px;
             background-color: #5c3fc0;
             color: white;
-            font-size: 18px;
+            font-size: 16px;
+            border-radius: 8px;
             cursor: pointer;
-            border-radius: 5px;
+            z-index: 1001;
+            display: none;
+        }
+
+        .go-home-button.active {
+            display: block;
         }
 
         .go-home-button:hover {
             background-color: #3f2d99;
         }
 
-        .playlist-input-container {
-            display: none;
+        /* Timer styles */
+        .timer-section {
             position: fixed;
-            top: 70px;
-            left: 20px;
-            background-color: lightgreen;
-            padding: 10px;
-            border-radius: 5px;
-            width: 250px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .playlist-input-container select {
-            font-size: 14px;
-        }
-
-        .playlist-input-container button {
-            font-size: 14px;
-            background-color: purple;
-            color: white;
-            margin-top: 10px;
-            border-radius: 5px;
-        }
-
-        .playlist-input-container button:hover {
-            background-color: #3f2d99;
-        }
-
-        /* Styling for reverse timer rectangle */
-        .timer-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 300px;
-            height: 120px;
-            background-color: #5c3fc0;
-            color: white;
-            margin-top: 20px;
-            font-size: 18px;
-            border-radius: 10px;
-            border: 2px solid black; /* Added black outline */
-            position: absolute;
-            top: 5px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            flex-direction: column;
-            transition: all 1s ease;
-        }
-
-        .timer-container.move {
-            transform: translateX(100vw); /* Move to the right */
-            width: 150px;
-            height: 60px;
+            background: linear-gradient(135deg, #5c3fc0, #3f2d99);
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            width: 300px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            text-align: center;
         }
 
         .timer-heading {
             font-size: 20px;
-            margin-bottom: 5px;
-            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .timer-details {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
+        .timer-display {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 0 auto;
         }
 
-        .timer-details div {
-            text-align: center;
+        .date-display {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #e0e0ff;
         }
 
-        /* Digital clock styling */
-        .digital-clock {
-            margin-top: 10px;
-            font-size: 22px;
-            font-family: 'Courier New', Courier, monospace;
+        .time-display {
+            font-size: 32px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Ensure timer stays visible in video mode */
+        .video-container.active ~ .timer-section {
+            background: rgba(92, 63, 192, 0.95);
+            backdrop-filter: blur(5px);
+        }
+
+        @media screen and (max-width: 768px) {
+            .timer-section {
+                width: 90%;
+                max-width: 300px;
+                padding: 15px;
+            }
+
+            .timer-heading {
+                font-size: 18px;
+            }
+
+            .date-display {
+                font-size: 16px;
+            }
+
+            .time-display {
+                font-size: 28px;
+            }
+
+            .content-container {
+                margin-top: 140px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .timer-section {
+                padding: 12px;
+            }
+
+            .timer-display {
+                padding: 12px;
+            }
+
+            .time-display {
+                font-size: 24px;
+            }
+
+            .content-container {
+                margin-top: 130px;
+            }
+        }
+
+        /* Mobile Responsive */
+        @media screen and (max-width: 768px) {
+            .video-wrapper {
+                width: 95%;
+            }
+
+            .go-home-button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
+            .timer-section {
+                width: 200px;
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .time-display {
+                font-size: 20px;
+            }
+        }
+
+        /* Accessibility improvements */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1a1a2e;
+                color: #e1e1e1;
+            }
+            
+            .content-container {
+                background: rgba(255, 255, 255, 0.05);
+            }
+            
+            select {
+                background-color: #2a2a3e;
+                color: white;
+            }
+            
+            .error-message {
+                background: rgba(220, 53, 69, 0.2);
+            }
+        }
+
+        /* Responsive design */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .content-container {
+                padding: 15px;
+            }
+        }
+
+        /* Touch device optimizations */
+        @media (hover: none) {
+            button, select {
+                padding: 15px 20px;
+            }
+        }
+
+        .admin-link {
+            margin: 20px 0;
+        }
+
+        .admin-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 14px;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .admin-link a:hover {
+            opacity: 1;
         }
     </style>
 </head>
 <body>
 
     <!-- Timer Section -->
-    <div class="timer-container" id="timer-container">
-        <div class="timer-heading">Days left for SSC CGL 2025</div>
-        <div class="timer-details">
-            <div id="days-left">Days: 0</div>
-            <div id="weeks-left">Weeks: 0</div>
-            <div id="months-left">Months: 0</div>
+    <div class="timer-section">
+        <div class="timer-heading">Current Time</div>
+        <div class="timer-display">
+            <div class="date-display" id="current-date">Loading date...</div>
+            <div class="time-display" id="current-time">Loading time...</div>
         </div>
-        <div class="digital-clock" id="digital-clock">00:00:00</div>
     </div>
 
     <div class="content-container" id="content-container">
         <h1>Snapdemon's Uninterrupted Video Player</h1>
-        <h2>Get out of the world of unwanted YT suggestions and scrolling</h2>
+        <h2>Select a playlist to start learning</h2>
+
+        <!-- Admin Login Link -->
+        <div class="admin-link">
+            <a href="admin.html" target="_blank">Admin Login</a>
+        </div>
 
         <!-- Dropdown for selecting the playlist -->
         <select id="playlist-select">
             <option value="">Select a Playlist</option>
-            <option value="PLsMCL_P04son8TfEuCbNKln30HjsXg8Fo">Playlist 1: Grammar</option>
-            <option value="PLsMCL_P04sokvaLF5Ku-WfrZDc8YMBiB3">Playlist 2: Revision batch for SSC exams</option>
-            <option value="PLsMCL_P04son4HdwFAHVIQ8VjAv4BZ3BJ">Playlist 3: English Chapterwise Practice</option>
         </select>
         <button onclick="playVideo()">Play Selected Playlist</button>
     </div>
 
-    <div class="video-container" id="video-container"></div>
+    <div class="video-container" id="video-container">
+        <div class="video-wrapper">
+            <iframe id="video-iframe" src="" frameborder="0" allowfullscreen></iframe>
+        </div>
+    </div>
 
     <!-- Go to Home Page Button -->
     <div class="go-home-button" id="go-home-button" onclick="goToHomePage()">Go to Home Page</div>
 
-    <!-- Playlist Input Container that appears below the go home button -->
-    <div class="playlist-input-container" id="playlist-input-container">
-        <select id="playlist-select-change">
-            <option value="">Select a Playlist</option>
-            <option value="PLsMCL_P04son8TfEuCbNKln30HjsXg8Fo">Playlist 1: Grammar</option>
-            <option value="PLsMCL_P04sokvaLF5Ku-WfrZDc8YMBiB3">Playlist 2: Revision batch for SSC exams</option>
-            <option value="PLsMCL_P04son4HdwFAHVIQ8VjAv4BZ3BJ">Playlist 3: English Chapterwise Practice</option>
-        </select>
-        <button onclick="changePlaylist()">Change Playlist</button>
-    </div>
-
     <script>
-        const allowedPlaylists = {
-            "PLsMCL_P04son8TfEuCbNKln30HjsXg8Fo": "Playlist 1: Grammar",
-            "PLsMCL_P04sokvaLF5Ku-WfrZDc8YMBiB3": "Playlist 2: Revision batch for SSC exams",
-            "PLsMCL_P04son4HdwFAHVIQ8VjAv4BZ3BJ": "Playlist 3: English Chapterwise Practice"
-        };
+        // Load playlists from localStorage
+        function loadPlaylists() {
+            const playlists = JSON.parse(localStorage.getItem('playlists') || '[]');
+            const playlistSelect = document.getElementById('playlist-select');
+            
+            // Clear existing options except the first one
+            while (playlistSelect.options.length > 1) {
+                playlistSelect.remove(1);
+            }
 
-        let currentPlaylistId = ""; // To store the current playlist id
+            // Add playlists from localStorage
+            playlists.forEach(playlist => {
+                const option = document.createElement('option');
+                option.value = `https://www.youtube.com/embed/videoseries?list=${playlist.id}&rel=0&modestbranding=1&autoplay=1&showinfo=0&controls=1&disablekb=1&iv_load_policy=3`;
+                option.textContent = playlist.title;
+                playlistSelect.appendChild(option);
+            });
+        }
+
+        // Load playlists on page load
+        loadPlaylists();
+
+        // Reload playlists every 5 seconds to check for updates
+        setInterval(loadPlaylists, 5000);
 
         function playVideo() {
+            const videoContainer = document.querySelector('.video-container');
+            const contentContainer = document.querySelector('.content-container');
+            const goHomeButton = document.querySelector('.go-home-button');
             const playlistSelect = document.getElementById('playlist-select');
-            const playlistId = playlistSelect.value;
-            const videoContainer = document.getElementById('video-container');
-            const contentContainer = document.getElementById('content-container');
-            const goHomeButton = document.getElementById('go-home-button');
-            const timerContainer = document.getElementById('timer-container');
-
-            if (playlistId && allowedPlaylists[playlistId]) {
-                currentPlaylistId = playlistId; // Store the current playlist ID
-                // Move the content container to the top-right corner and hide it
-                contentContainer.classList.add('move');
-                timerContainer.classList.add('move'); // Move the timer too
+            const selectedVideo = playlistSelect.value;
+            
+            if (selectedVideo) {
+                const iframe = document.querySelector('iframe');
+                iframe.src = selectedVideo;
                 
-                // After transition ends, hide the heading and subheading
-                setTimeout(function() {
+                contentContainer.classList.add('move');
+                setTimeout(() => {
                     contentContainer.classList.add('hidden');
-                    timerContainer.classList.add('hidden');
-                }, 1000); // Match the duration of the move animation (1 second)
-
-                // Show the video container
-                videoContainer.style.display = 'block';
-
-                // Create the embed URL for the playlist
-                const embedUrl = `https://www.youtube.com/embed/videoseries?list=${playlistId}&rel=0&modestbranding=1&autoplay=1&showinfo=0&controls=1&disablekb=1&iv_load_policy=3`;
-
-                // Embed the iframe video
-                const iframe = document.createElement('iframe');
-                iframe.src = embedUrl;
-                iframe.allow = 'autoplay; encrypted-media';
-                iframe.allowFullscreen = true;
-
-                // Reset previous content
-                videoContainer.innerHTML = '';
-                videoContainer.appendChild(iframe);
-
-                // Show the Go to Home Page button
-                goHomeButton.style.display = 'block';
+                    videoContainer.classList.add('active');
+                    goHomeButton.classList.add('active');
+                }, 300);
             } else {
-                videoContainer.innerHTML = `<div class="error-message">Please select a valid playlist.</div>`;
-                videoContainer.style.display = 'block';
+                alert('Please select a video first');
             }
         }
 
         function goToHomePage() {
-            // Reload the page to go back to the home page
-            location.reload();
+            const videoContainer = document.querySelector('.video-container');
+            const contentContainer = document.querySelector('.content-container');
+            const goHomeButton = document.querySelector('.go-home-button');
+            const iframe = document.querySelector('iframe');
+            
+            videoContainer.classList.remove('active');
+            goHomeButton.classList.remove('active');
+            contentContainer.classList.remove('hidden');
+            setTimeout(() => {
+                contentContainer.classList.remove('move');
+                iframe.src = '';
+            }, 100);
         }
 
-        function changePlaylist() {
-            const playlistSelectChange = document.getElementById('playlist-select-change');
-            const playlistId = playlistSelectChange.value;
-
-            if (playlistId && allowedPlaylists[playlistId]) {
-                // Store the new playlist ID
-                currentPlaylistId = playlistId;
-
-                // Hide the playlist input box
-                document.getElementById('playlist-input-container').style.display = 'none';
-
-                // Play the selected playlist
-                const videoContainer = document.getElementById('video-container');
-                videoContainer.style.display = 'none'; // Hide the previous video
-                playVideo(); // Play the new playlist
-            } else {
-                alert("Please select a valid playlist.");
-            }
-        }
-
-        // Countdown function for the reverse timer
-        function updateTimer() {
-            const examDate = new Date("May 31, 2025 00:00:00 GMT+0530"); // Exam date (IST)
+        function updateDateTime() {
             const now = new Date();
-            const timeRemaining = examDate - now;
-
-            // Calculate remaining time
-            const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
-            const weeks = Math.floor(days / 7);
-            const months = Math.floor(days / 30);
-
-            // Display remaining time
-            document.getElementById('days-left').innerText = `Days: ${days}`;
-            document.getElementById('weeks-left').innerText = `Weeks: ${weeks}`;
-            document.getElementById('months-left').innerText = `Months: ${months}`;
-
-            // Update digital clock
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            const seconds = now.getSeconds().toString().padStart(2, '0');
-            document.getElementById('digital-clock').innerText = `${hours}:${minutes}:${seconds}`;
+            
+            // Update date
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', dateOptions);
+            
+            // Update time
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+            document.getElementById('current-time').textContent = now.toLocaleTimeString('en-US', timeOptions);
         }
 
-        // Update the timer every second
-        setInterval(updateTimer, 1000);
+        // Update immediately and then every second
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
     </script>
-<!-- Footer Section -->
-<div class="footer" id="footer">
-    More Courses will be added soon....
-</div>
 
-<!-- Footer Style -->
-<style>
-    .footer {
-        position: fixed;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        background: linear-gradient(to right, yellow, purple);
-        color: white;
-        font-size: 20px;
-        padding: 10px 20px;
-        border-radius: 5px;
-        text-align: center;
-        width: 100%;
-        font-weight: bold;
-    }
-</style>
-
-</body>
-</html>
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pomodoro Timer</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f4ff;
-        }
-
-        .pomodoro-container {
-            position: fixed;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: #f5f9ff;
-            padding: 10px 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            width: 200px;
-            text-align: center;
-            font-size: 14px;
-            border: 2px solid #5c3fc0;
-        }
-
-        .pomodoro-container h3 {
-            margin-bottom: 10px;
-            color: #5c3fc0;
-            font-size: 18px;
-        }
-
-        .pomodoro-container input {
-            width: 100%;
-            padding: 8px;
-            border: 2px solid #5c3fc0;
-            border-radius: 5px;
-            font-size: 14px;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        .timer-display {
-            font-size: 20px;
-            margin-bottom: 15px;
-            color: #3f2d99;
-        }
-
-        .button-container button {
-            padding: 8px;
-            font-size: 14px;
-            border: none;
-            border-radius: 5px;
-            margin: 5px;
-            cursor: pointer;
-        }
-
-        .start-btn {
-            background-color: lightblue;
-            color: white;
-        }
-
-        .pause-btn {
-            background-color: purple;
-            color: white;
-        }
-
-        .reset-btn {
-            background-color: #f5f9ff;
-            border: 2px solid purple;
-            color: purple;
-        }
-
-        .start-btn:hover, .pause-btn:hover, .reset-btn:hover {
-            opacity: 0.8;
-        }
-    </style>
-</head>
-<body>
-
-    <!-- Pomodoro Timer Container -->
-    <div class="pomodoro-container" id="pomodoro-container">
-        <h3>Pomodoro Timer</h3>
-        <input type="number" id="custom-time" placeholder="Enter time (mins)" />
-        <div class="timer-display" id="timer-display">00:00</div>
-        <div class="button-container">
-            <button class="start-btn" id="start-btn" onclick="startTimer()">Start</button>
-            <button class="pause-btn" id="pause-btn" onclick="pauseTimer()">Pause</button>
-            <button class="reset-btn" id="reset-btn" onclick="resetTimer()">Reset</button>
-        </div>
+    <!-- Footer Section -->
+    <div class="footer" id="footer">
+        More Courses will be added soon....
     </div>
 
-    <script>
-        let timer;
-        let timeRemaining;
-        let isRunning = false;
-
-        // Timer Display Update Function
-        function updateTimerDisplay() {
-            let minutes = Math.floor(timeRemaining / 60);
-            let seconds = timeRemaining % 60;
-            if (seconds < 10) {
-                seconds = "0" + seconds;
-            }
-            document.getElementById('timer-display').textContent = `${minutes}:${seconds}`;
+    <!-- Footer Style -->
+    <style>
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(to right, yellow, purple);
+            color: white;
+            font-size: 20px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-align: center;
+            width: 100%;
+            font-weight: bold;
         }
-
-        // Start Timer Function
-        function startTimer() {
-            const inputTime = document.getElementById('custom-time').value;
-            if (inputTime && !isRunning) {
-                timeRemaining = inputTime * 60; // Convert minutes to seconds
-                timer = setInterval(function () {
-                    if (timeRemaining <= 0) {
-                        clearInterval(timer);
-                        alert("Time's up!");
-                        isRunning = false;
-                        updateTimerDisplay();
-                    } else {
-                        timeRemaining--;
-                        updateTimerDisplay();
-                    }
-                }, 1000);
-                isRunning = true;
-            } else {
-                alert("Please set a custom time first.");
-            }
-        }
-
-        // Pause Timer Function
-        function pauseTimer() {
-            clearInterval(timer);
-            isRunning = false;
-        }
-
-        // Reset Timer Function
-        function resetTimer() {
-            clearInterval(timer);
-            isRunning = false;
-            timeRemaining = 0;
-            updateTimerDisplay();
-            document.getElementById('custom-time').value = '';
-        }
-    </script>
+    </style>
 
 </body>
 </html>
